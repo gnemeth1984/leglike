@@ -57,10 +57,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts    Account[]
-  sessions    Session[]
-  onboarding  OnboardingProfile?
-  assessments MobilityAssessment[]
+  accounts     Account[]
+  sessions     Session[]
+  onboarding   OnboardingProfile?
+  assessments  MobilityAssessment[]
   workoutPlans WorkoutPlan[]
   rehabPlans   RehabPlan[]
 }
@@ -102,20 +102,20 @@ model VerificationToken {
 }
 
 model OnboardingProfile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  age            Int?
-  heightCm        Int?
-  weightKg        Int?
-  activityLevel  String?
-  primaryGoal    String?
-  painAreas      String[]
-  injuryHistory  String?
-  equipment      String[]
-  daysPerWeek    Int?
-  completed      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  age           Int?
+  heightCm      Int?
+  weightKg      Int?
+  activityLevel String?
+  primaryGoal   String?
+  painAreas     String[]
+  injuryHistory String?
+  equipment     String[]
+  daysPerWeek   Int?
+  completed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -142,16 +142,16 @@ model Exercise {
 }
 
 model MobilityAssessment {
-  id            String   @id @default(cuid())
-  userId        String
-  hipScore      Int
-  kneeScore     Int
-  ankleScore    Int
-  balanceScore  Int
-  overallScore  Int
-  notes         String?
+  id             String   @id @default(cuid())
+  userId         String
+  hipScore       Int
+  kneeScore      Int
+  ankleScore     Int
+  balanceScore   Int
+  overallScore   Int
+  notes          String?
   recommendation String?
-  createdAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -170,7 +170,7 @@ model WorkoutPlan {
 }
 
 model WorkoutExercise {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   workoutId   String
   exerciseId  String
   order       Int
@@ -178,7 +178,7 @@ model WorkoutExercise {
   reps        String?
   durationSec Int?
   restSec     Int?
-  completed   Boolean  @default(false)
+  completed   Boolean @default(false)
 
   workout  WorkoutPlan @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   exercise Exercise    @relation(fields: [exerciseId], references: [id])
@@ -200,15 +200,153 @@ model RehabPlan {
 }
 
 model RehabExercise {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   rehabPlanId String
   exerciseId  String
   order       Int
   sets        Int?
   reps        String?
   durationSec Int?
-  completed   Boolean  @default(false)
+  completed   Boolean @default(false)
 
   rehabPlan RehabPlan @relation(fields: [rehabPlanId], references: [id], onDelete: Cascade)
   exercise  Exercise  @relation(fields: [exerciseId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// SEO / AI-visibility autopilot
+//
+// Three loops: harvest keywords people actually search, publish one article
+// per keyword, then refresh whatever is decaying or stalled. AiPrompt/
+// AiVisibility track whether AI assistants (ChatGPT, Perplexity) mention
+// LegLike when asked buyer questions — the "generative engine optimisation"
+// half of this. SeoMetric/SeoRun are the audit trail; CronRun is a generic
+// log of every scheduled job's outcome.
+// ---------------------------------------------------------------------------
+
+model BlogPost {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  title      String
+  excerpt    String
+  content    String   @db.Text
+  category   String   @default("training")
+  tags       String   @default("")
+  metaTitle  String
+  metaDesc   String
+  coverImage String?
+  published  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // SEO autopilot fields
+  keyword      String? // the target query this article was written for
+  faq          String?   @db.Text // JSON array of {q,a} — renders as FAQ + FAQPage schema
+  wordCount    Int?
+  refreshedAt  DateTime? // last time the autopilot rewrote/expanded it
+  refreshCount Int       @default(0)
+
+  @@index([slug])
+  @@index([published, createdAt])
+}
+
+model SeoKeyword {
+  id      String @id @default(cuid())
+  keyword String @unique
+  cluster String @default("general") // topical map bucket, e.g. "knee rehab"
+  intent  String @default("informational") // informational | commercial | transactional | local
+  region  String @default("general") // general | us | uk
+  source  String @default("seed") // seed | suggest | paa | gsc | ai
+
+  // Live Search Console numbers, refreshed by the keyword cron.
+  impressions Int    @default(0)
+  clicks      Int    @default(0)
+  position    Float?
+
+  priority Int     @default(0) // computed score, higher wins the next article
+  status   String  @default("new") // new | queued | written | skipped
+  postId   String? // BlogPost.id once written
+  note     String? // why it was skipped / how it was scored
+
+  writtenAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([status, priority])
+  @@index([cluster])
+}
+
+// AiPrompt — a buying question we want an AI assistant to name LegLike in.
+model AiPrompt {
+  id      String  @id @default(cuid())
+  prompt  String  @unique
+  cluster String  @default("general")
+  intent  String  @default("commercial")
+  region  String  @default("general")
+  active  Boolean @default(true)
+
+  createdAt DateTime       @default(now())
+  checks    AiVisibility[]
+
+  @@index([active])
+}
+
+// AiVisibility — one answer from one model at one point in time.
+model AiVisibility {
+  id       String   @id @default(cuid())
+  promptId String
+  prompt   AiPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  model  String // gpt-4o-mini | sonar | ...
+  answer String @db.Text
+
+  mentioned   Boolean @default(false)
+  rank        Int? // 1-based place in the answer where LegLike appears; null when absent
+  cited       Boolean @default(false) // did it name/link leglike.com
+  competitors String  @default("") // competitor names found, comma separated
+
+  createdAt DateTime @default(now())
+
+  @@index([promptId, createdAt])
+  @@index([createdAt])
+}
+
+model SeoMetric {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  page        String // full URL from Search Console
+  query       String   @default("") // "" = page-level row
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  ctr         Float    @default(0)
+  position    Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  @@unique([date, page, query])
+  @@index([page, date])
+  @@index([date])
+}
+
+model SeoRun {
+  id        String   @id @default(cuid())
+  task      String // keywords | publish | refresh | index | metrics | sitemap
+  ok        Boolean  @default(true)
+  detail    String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([task, createdAt])
+}
+
+model CronRun {
+  id         String  @id @default(cuid())
+  job        String
+  ok         Boolean @default(true)
+  detail     String? @db.Text
+  durationMs Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([job, createdAt])
+  @@index([createdAt])
+  @@index([ok, createdAt])
 }

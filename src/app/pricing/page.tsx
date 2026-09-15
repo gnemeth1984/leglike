@@ -17,7 +17,7 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "$19",
+    price: "$9",
     period: "/ month",
     desc: "Unlimited AI plans for serious training and recovery.",
     features: [

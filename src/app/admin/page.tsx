@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { AdminTabs } from "@/components/admin/admin-tabs";
 
 export default async function AdminPage() {
   const [userCount, workoutCount, rehabCount, exerciseCount, assessmentCount, users] = await Promise.all([
@@ -46,47 +47,51 @@ export default async function AdminPage() {
           ))}
         </div>
 
-        <Card>
-          <h2 className="mb-4 font-semibold text-white">Users</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-neutral-800 text-neutral-500">
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Email</th>
-                  <th className="py-2 pr-4">Role</th>
-                  <th className="py-2 pr-4">Plan</th>
-                  <th className="py-2 pr-4">Plans</th>
-                  <th className="py-2 pr-4">Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-neutral-900 text-neutral-300">
-                    <td className="py-2 pr-4">{u.name}</td>
-                    <td className="py-2 pr-4 text-neutral-500">{u.email}</td>
-                    <td className="py-2 pr-4">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] ${
-                          u.role === "ADMIN" ? "bg-lime-400/20 text-lime-400" : "bg-neutral-800 text-neutral-400"
-                        }`}
-                      >
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-4">{u.plan}</td>
-                    <td className="py-2 pr-4 text-neutral-500">
-                      {u._count.workoutPlans + u._count.rehabPlans} plans / {u._count.assessments} assess.
-                    </td>
-                    <td className="py-2 pr-4 text-neutral-500">
-                      {new Date(u.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <AdminTabs
+          usersPanel={
+            <Card>
+              <h2 className="mb-4 font-semibold text-white">Users</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-800 text-neutral-500">
+                      <th className="py-2 pr-4">Name</th>
+                      <th className="py-2 pr-4">Email</th>
+                      <th className="py-2 pr-4">Role</th>
+                      <th className="py-2 pr-4">Plan</th>
+                      <th className="py-2 pr-4">Plans</th>
+                      <th className="py-2 pr-4">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id} className="border-b border-neutral-900 text-neutral-300">
+                        <td className="py-2 pr-4">{u.name}</td>
+                        <td className="py-2 pr-4 text-neutral-500">{u.email}</td>
+                        <td className="py-2 pr-4">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] ${
+                              u.role === "ADMIN" ? "bg-lime-400/20 text-lime-400" : "bg-neutral-800 text-neutral-400"
+                            }`}
+                          >
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-4">{u.plan}</td>
+                        <td className="py-2 pr-4 text-neutral-500">
+                          {u._count.workoutPlans + u._count.rehabPlans} plans / {u._count.assessments} assess.
+                        </td>
+                        <td className="py-2 pr-4 text-neutral-500">
+                          {new Date(u.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          }
+        />
       </div>
     </DashboardShell>
   );
