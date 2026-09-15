@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PRO
+  CLINIC
+}
+
+enum BodyRegion {
+  HIP
+  KNEE
+  ANKLE
+  FOOT
+  GLUTE
+  HAMSTRING
+  QUAD
+  CALF
+  FULL_LEG
+}
+
+enum ExerciseType {
+  STRENGTH
+  MOBILITY
+  REHAB
+  BALANCE
+  STRETCH
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  passwordHash  String?
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+  plan          Plan      @default(FREE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  onboarding  OnboardingProfile?
+  assessments MobilityAssessment[]
+  workoutPlans WorkoutPlan[]
+  rehabPlans   RehabPlan[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model OnboardingProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  age            Int?
+  heightCm        Int?
+  weightKg        Int?
+  activityLevel  String?
+  primaryGoal    String?
+  painAreas      String[]
+  injuryHistory  String?
+  equipment      String[]
+  daysPerWeek    Int?
+  completed      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Exercise {
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique
+  description  String
+  instructions String
+  type         ExerciseType
+  region       BodyRegion
+  difficulty   Difficulty
+  equipment    String[]
+  sets         Int?
+  reps         String?
+  durationSec  Int?
+  videoUrl     String?
+  imageUrl     String?
+  createdAt    DateTime     @default(now())
+
+  workoutExercises WorkoutExercise[]
+  rehabExercises   RehabExercise[]
+}
+
+model MobilityAssessment {
+  id            String   @id @default(cuid())
+  userId        String
+  hipScore      Int
+  kneeScore     Int
+  ankleScore    Int
+  balanceScore  Int
+  overallScore  Int
+  notes         String?
+  recommendation String?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  goal        String?
+  aiGenerated Boolean  @default(false)
+  weekNumber  Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id          String   @id @default(cuid())
+  workoutId   String
+  exerciseId  String
+  order       Int
+  sets        Int?
+  reps        String?
+  durationSec Int?
+  restSec     Int?
+  completed   Boolean  @default(false)
+
+  workout  WorkoutPlan @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise Exercise    @relation(fields: [exerciseId], references: [id])
+}
+
+model RehabPlan {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String
+  region      BodyRegion
+  condition   String?
+  phase       Int        @default(1)
+  totalPhases Int        @default(3)
+  aiGenerated Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises RehabExercise[]
+}
+
+model RehabExercise {
+  id          String   @id @default(cuid())
+  rehabPlanId String
+  exerciseId  String
+  order       Int
+  sets        Int?
+  reps        String?
+  durationSec Int?
+  completed   Boolean  @default(false)
+
+  rehabPlan RehabPlan @relation(fields: [rehabPlanId], references: [id], onDelete: Cascade)
+  exercise  Exercise  @relation(fields: [exerciseId], references: [id])
+}
