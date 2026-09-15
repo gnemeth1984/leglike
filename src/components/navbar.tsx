@@ -21,6 +21,9 @@ export function Navbar() {
           <Link href="/pricing" className="text-sm text-neutral-300 hover:text-white">
             Pricing
           </Link>
+          <Link href="/blog" className="text-sm text-neutral-300 hover:text-white">
+            Blog
+          </Link>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/auth/signin">
