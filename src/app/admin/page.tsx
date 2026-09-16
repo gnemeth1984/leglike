@@ -4,6 +4,8 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { AdminTabs } from "@/components/admin/admin-tabs";
 import { MessagesPanel } from "@/components/admin/messages-panel";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const [userCount, workoutCount, rehabCount, exerciseCount, assessmentCount, users, messages] = await Promise.all([
     prisma.user.count(),
