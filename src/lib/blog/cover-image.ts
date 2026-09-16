@@ -107,9 +107,59 @@ function brandedSvgCover(title: string, category: string): { body: Buffer; conte
   return { body: Buffer.from(svg, 'utf8'), contentType: 'image/svg+xml' };
 }
 
+const NO_TEXT_CLAUSE =
+  'No text, no letters, no numbers, no captions, no logos and no watermarks anywhere in the image.';
+
+/** Strip generic wrapper phrasing so the movement/condition name reads cleanly in a prompt. */
+function coreTopic(title: string) {
+  return title
+    .replace(/^Master the\s+/i, '')
+    .replace(/^How to Do (an?|the)\s+/i, '')
+    .replace(/\s*[:|]\s*Causes,?\s*Recovery Timeline.*$/i, '')
+    .replace(/\s*Recovery Guide$/i, '')
+    .trim();
+}
+
 /**
- * Ask OpenAI for a photoreal-ish editorial illustration. Returns null on any
- * failure so the caller can fall back rather than publish a coverless post.
+ * Builds a category-aware prompt for a real, photoreal photograph (not an
+ * illustration) — the exercise/rehab movement actually being performed.
+ */
+function buildCoverPrompt(title: string, category: string): string {
+  const topic = coreTopic(title);
+
+  if (category === 'training') {
+    return (
+      `Photoreal photograph, shot on a full-frame DSLR: an athletic person performing "${topic}" with ` +
+      `correct exercise form, mid-rep, in a bright modern gym. Foreground is the person and the movement, ` +
+      `midground is real gym equipment (racks, mats, dumbbells) softly out of focus, background is a large ` +
+      `window letting in natural daylight. Shallow depth of field, natural skin texture with visible pores, ` +
+      `candid documentary fitness-photography style — not a posed stock photo. ${NO_TEXT_CLAUSE}`
+    );
+  }
+
+  if (category === 'rehab') {
+    return (
+      `Photoreal photograph, shot on a full-frame DSLR: a person performing a gentle, safe rehabilitation ` +
+      `exercise for "${topic}" under guidance, in a bright physical-therapy clinic or calm home setting. ` +
+      `Foreground shows correct, careful movement (using a mat, resistance band, or simple support where ` +
+      `relevant), midground shows real clinic/home details softly out of focus, background has soft natural ` +
+      `window light. Reassuring, calm mood, natural skin texture with visible pores, candid documentary ` +
+      `photography style — not a posed stock photo. ${NO_TEXT_CLAUSE}`
+    );
+  }
+
+  return (
+    `Photoreal editorial photograph, shot on a full-frame DSLR, illustrating "${topic}" for a lower-body ` +
+    `health and fitness blog. Real environment relevant to the topic (gym, clinic, or home), natural window ` +
+    `light, candid documentary photography style, natural skin texture with visible pores — not a posed ` +
+    `stock photo. ${NO_TEXT_CLAUSE}`
+  );
+}
+
+/**
+ * Ask OpenAI for a real photoreal photograph of the movement/topic. Returns
+ * null on any failure so the caller can fall back rather than publish a
+ * coverless post.
  */
 async function openAiCover(title: string, category: string): Promise<{ body: Buffer; contentType: string } | null> {
   const key = process.env.OPENAI_API_KEY;
@@ -118,11 +168,7 @@ async function openAiCover(title: string, category: string): Promise<{ body: Buf
     return null;
   }
 
-  const prompt =
-    `Clean, modern flat editorial illustration for a fitness/physical-therapy blog article titled "${title}" ` +
-    `(category: ${category}). Show a person doing lower-body training, mobility work, or rehab exercise in a ` +
-    `bright minimal gym or home setting relevant to the topic. Minimal premium fitness-app blog cover style, ` +
-    `dark neutral background with a lime-green accent. Absolutely no text, no letters, no numbers and no logos anywhere in the image.`;
+  const prompt = buildCoverPrompt(title, category);
 
   try {
     // Quality is set explicitly and deliberately. gpt-image-1 defaults to
@@ -176,15 +222,16 @@ export async function generateCoverImage(title: string, category: string): Promi
   const image = (await openAiCover(title, category)) ?? brandedSvgCover(title, category);
 
   try {
-    // This Blob store is private-only. Blog posts are public pages, so the
-    // image is proxied via /api/blog/cover-image, which needs no session.
+    // The store is public-access (Vercel Blob no longer offers private access
+    // on new stores), so the returned CDN url is served directly — no proxy
+    // route needed. Blog/exercise/rehab pages are public anyway.
     const ext =
       image.contentType === 'image/svg+xml' ? 'svg' : image.contentType.includes('png') ? 'png' : 'jpg';
     const blob = await put(`blog-covers/${slugify(title)}-${Date.now()}.${ext}`, image.body, {
-      access: 'private',
+      access: 'public',
       contentType: image.contentType,
     });
-    return `/api/blog/cover-image?url=${encodeURIComponent(blob.url)}`;
+    return blob.url;
   } catch (e: unknown) {
     console.error('[Blog] Cover image upload failed:', e instanceof Error ? e.message : e);
     return null;
