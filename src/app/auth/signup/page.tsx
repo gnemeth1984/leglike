@@ -15,16 +15,21 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!consent) {
+      setError("Please agree to the Terms and Privacy Policy to continue.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, consent }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -72,8 +77,29 @@ export default function SignUpPage() {
             minLength={8}
             required
           />
+          <label className="flex items-start gap-2 text-xs text-neutral-500">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 accent-lime-400"
+              required
+            />
+            <span>
+              I agree to the{" "}
+              <Link href="/terms" className="text-lime-400 hover:underline" target="_blank">
+                Terms &amp; Conditions
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="text-lime-400 hover:underline" target="_blank">
+                Privacy Policy
+              </Link>
+              , including the medical disclaimer — LegLike is not a substitute for professional
+              medical advice.
+            </span>
+          </label>
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !consent}>
             {loading ? "Creating account..." : "Create account"}
           </Button>
         </form>

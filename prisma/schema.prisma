@@ -54,6 +54,7 @@ model User {
   image         String?
   role          Role      @default(USER)
   plan          Plan      @default(FREE)
+  consentAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -398,4 +399,23 @@ model CronRun {
   @@index([job, createdAt])
   @@index([createdAt])
   @@index([ok, createdAt])
+}
+
+enum ContactCategory {
+  PRIVACY
+  SUPPORT
+  LEGAL
+  OTHER
+}
+
+model ContactMessage {
+  id        String          @id @default(cuid())
+  name      String
+  email     String
+  category  ContactCategory @default(OTHER)
+  message   String          @db.Text
+  status    String          @default("open") // open | read | resolved
+  createdAt DateTime        @default(now())
+
+  @@index([status, createdAt])
 }

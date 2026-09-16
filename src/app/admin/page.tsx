@@ -2,9 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { AdminTabs } from "@/components/admin/admin-tabs";
+import { MessagesPanel } from "@/components/admin/messages-panel";
 
 export default async function AdminPage() {
-  const [userCount, workoutCount, rehabCount, exerciseCount, assessmentCount, users] = await Promise.all([
+  const [userCount, workoutCount, rehabCount, exerciseCount, assessmentCount, users, messages] = await Promise.all([
     prisma.user.count(),
     prisma.workoutPlan.count(),
     prisma.rehabPlan.count(),
@@ -23,6 +24,7 @@ export default async function AdminPage() {
       orderBy: { createdAt: "desc" },
       take: 50,
     }),
+    prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
   ]);
 
   const stats = [
@@ -91,6 +93,7 @@ export default async function AdminPage() {
               </div>
             </Card>
           }
+          messagesPanel={<MessagesPanel messages={messages} />}
         />
       </div>
     </DashboardShell>

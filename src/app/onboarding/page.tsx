@@ -63,6 +63,11 @@ export default function OnboardingPage() {
             />
           ))}
         </div>
+        <p className="mb-6 text-xs text-neutral-500">
+          Info you share here (like pain areas or injury history) is used to personalize your
+          AI-generated plans. LegLike is not medical advice — see our{" "}
+          <a href="/disclaimer" target="_blank" className="text-lime-400 hover:underline">Medical Disclaimer</a>.
+        </p>
 
         {step === 1 && (
           <div className="space-y-4">

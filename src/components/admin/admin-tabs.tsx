@@ -3,14 +3,21 @@
 import { useState, type ReactNode } from "react";
 import { SeoTab } from "@/components/admin/seo-tab";
 
-export function AdminTabs({ usersPanel }: { usersPanel: ReactNode }) {
-  const [tab, setTab] = useState<"users" | "seo">("users");
+export function AdminTabs({
+  usersPanel,
+  messagesPanel,
+}: {
+  usersPanel: ReactNode;
+  messagesPanel: ReactNode;
+}) {
+  const [tab, setTab] = useState<"users" | "seo" | "messages">("users");
 
   return (
     <div>
       <div className="mb-8 flex gap-2 border-b border-neutral-800">
         {[
           { id: "users" as const, label: "Users" },
+          { id: "messages" as const, label: "Messages" },
           { id: "seo" as const, label: "SEO Autopilot" },
         ].map((t) => (
           <button
@@ -27,7 +34,7 @@ export function AdminTabs({ usersPanel }: { usersPanel: ReactNode }) {
         ))}
       </div>
 
-      {tab === "users" ? usersPanel : <SeoTab />}
+      {tab === "users" ? usersPanel : tab === "messages" ? messagesPanel : <SeoTab />}
     </div>
   );
 }

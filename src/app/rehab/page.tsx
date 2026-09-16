@@ -17,7 +17,13 @@ export default async function RehabPage() {
   return (
     <DashboardShell>
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <h1 className="mb-8 text-2xl font-bold text-white">Rehab Plans</h1>
+        <h1 className="mb-2 text-2xl font-bold text-white">Rehab Plans</h1>
+        <p className="mb-8 max-w-2xl text-xs text-neutral-500">
+          AI-generated rehab suggestions are for informational purposes only and are not a
+          substitute for professional medical advice. See our{" "}
+          <a href="/disclaimer" target="_blank" className="text-lime-400 hover:underline">Medical Disclaimer</a>{" "}
+          — consult a healthcare professional before starting any rehab program.
+        </p>
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <GenerateRehabForm />
