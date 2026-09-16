@@ -31,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SeoTrendChart, type TrendPoint, type Delta } from "@/components/admin/seo-trend-chart";
 import { AiVisibilityPanel } from "@/components/admin/ai-visibility-panel";
+import { Dumbbell, HeartPulse } from "lucide-react";
 
 type QueueRow = {
   id: string;
@@ -269,6 +270,9 @@ export function SeoTab() {
       {/* AI search visibility — the half of SEO that's newly up for grabs */}
       <AiVisibilityPanel />
 
+      {/* Exercise pages & rehab guides — data-driven, not keyword-driven */}
+      <ContentPagesPanel />
+
       {/* Numbers */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         {[
@@ -468,6 +472,121 @@ export function SeoTab() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+type ContentCounts = {
+  exercises: { total: number; withPage: number };
+  rehabGuides: { live: number; total: number };
+};
+
+/**
+ * Exercise pages and rehab guides are data-driven, not keyword-driven — no
+ * queue, no clusters, just "walk the fixed set and write what's missing" —
+ * so they get their own small panel rather than being forced into the
+ * keyword-queue shapes above.
+ */
+function ContentPagesPanel() {
+  const [counts, setCounts] = useState<ContentCounts | null>(null);
+  const [running, setRunning] = useState<"exercises" | "rehab" | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/admin/seo/content-counts", { cache: "no-store" });
+    if (res.ok) setCounts(await res.json());
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function run(task: "exercises" | "rehab") {
+    const endpoint =
+      task === "exercises" ? "/api/cron/generate-exercise-pages" : "/api/cron/generate-rehab-guides";
+    setRunning(task);
+    setMessage(null);
+    try {
+      const res = await fetch(endpoint, { method: "POST", cache: "no-store" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(`Failed: ${json.error ?? res.status}`);
+      } else if (json.written?.length) {
+        setMessage(`Wrote ${json.written.length} new page(s): ${json.written.map((w: any) => w.slug ?? w.name ?? w.condition).join(", ")}.`);
+      } else if (json.source === "refresh" && json.slug) {
+        setMessage(`Refreshed "${json.slug}".`);
+      } else {
+        setMessage(json.reason || "Nothing to do.");
+      }
+      await load();
+    } catch (err) {
+      setMessage(`Failed: ${String(err)}`);
+    } finally {
+      setRunning(null);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+      <h3 className="mb-3 text-sm font-semibold text-white">Exercise pages & rehab guides</h3>
+      <p className="mb-4 text-xs text-neutral-500">
+        Data-driven, not keyword-driven — each run writes the next exercise or condition without a
+        page yet, and refreshes the thinnest page once everything&apos;s covered. Both also run on their
+        own cron twice a week.
+      </p>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950/40 p-3 sm:p-4">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Dumbbell className="h-3.5 w-3.5 text-lime-400" />
+            <p className="text-xs uppercase tracking-wide text-neutral-500">Exercise pages</p>
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {counts ? `${counts.exercises.withPage} / ${counts.exercises.total}` : "—"}
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-3"
+            onClick={() => run("exercises")}
+            disabled={!!running}
+          >
+            {running === "exercises" ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            Generate exercise pages
+          </Button>
+        </div>
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950/40 p-3 sm:p-4">
+          <div className="mb-2 flex items-center gap-1.5">
+            <HeartPulse className="h-3.5 w-3.5 text-lime-400" />
+            <p className="text-xs uppercase tracking-wide text-neutral-500">Rehab guides</p>
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {counts ? `${counts.rehabGuides.live} / ${counts.rehabGuides.total}` : "—"}
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-3"
+            onClick={() => run("rehab")}
+            disabled={!!running}
+          >
+            {running === "rehab" ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            Generate rehab guides
+          </Button>
+        </div>
+      </div>
+      {message && (
+        <div className="mt-3 rounded-xl border border-neutral-800 bg-neutral-950/40 p-3 text-sm text-neutral-300">
+          {message}
+        </div>
+      )}
     </div>
   );
 }

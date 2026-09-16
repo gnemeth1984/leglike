@@ -20,16 +20,32 @@ export const revalidate = 3600;
  *
  * Bump this when you ship a change to a static marketing page.
  */
-const STATIC_UPDATED = new Date("2026-09-15T00:00:00Z");
+const STATIC_UPDATED = new Date("2026-09-16T00:00:00Z");
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const posts = await prisma.blogPost
-    .findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { createdAt: "desc" },
-    })
-    .catch(() => []);
+  const [posts, exercisePages, rehabGuides] = await Promise.all([
+    prisma.blogPost
+      .findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { createdAt: "desc" },
+      })
+      .catch(() => []),
+    prisma.exercise
+      .findMany({
+        where: { published: true },
+        select: { slug: true, createdAt: true, refreshedAt: true },
+        orderBy: { createdAt: "desc" },
+      })
+      .catch(() => []),
+    prisma.rehabGuide
+      .findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { createdAt: "desc" },
+      })
+      .catch(() => []),
+  ]);
 
   const blogUrls = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
@@ -38,10 +54,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const exerciseUrls = exercisePages.map((ex) => ({
+    url: `${baseUrl}/exercises/${ex.slug}`,
+    lastModified: ex.refreshedAt ?? ex.createdAt,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  const rehabGuideUrls = rehabGuides.map((g) => ({
+    url: `${baseUrl}/rehab-guides/${g.slug}`,
+    lastModified: g.updatedAt,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
   return [
     { url: `${baseUrl}/`, lastModified: STATIC_UPDATED, changeFrequency: "daily", priority: 1 },
     { url: `${baseUrl}/pricing`, lastModified: STATIC_UPDATED, changeFrequency: "monthly", priority: 0.9 },
     { url: `${baseUrl}/exercises`, lastModified: STATIC_UPDATED, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${baseUrl}/rehab-guides`, lastModified: STATIC_UPDATED, changeFrequency: "weekly", priority: 0.7 },
     { url: `${baseUrl}/blog`, lastModified: STATIC_UPDATED, changeFrequency: "daily", priority: 0.8 },
     { url: `${baseUrl}/compare`, lastModified: STATIC_UPDATED, changeFrequency: "monthly", priority: 0.7 },
     // Comparison pages: highest commercial intent on the site, so they carry
@@ -55,5 +86,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/auth/signup`, lastModified: STATIC_UPDATED, changeFrequency: "yearly", priority: 0.4 },
     { url: `${baseUrl}/auth/signin`, lastModified: STATIC_UPDATED, changeFrequency: "yearly", priority: 0.3 },
     ...blogUrls,
+    ...exerciseUrls,
+    ...rehabGuideUrls,
   ];
 }

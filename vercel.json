@@ -4,13 +4,17 @@
     "src/app/api/cron/seo-refresh/route.ts": { "maxDuration": 300 },
     "src/app/api/cron/seo-metrics/route.ts": { "maxDuration": 300 },
     "src/app/api/cron/ai-visibility/route.ts": { "maxDuration": 300 },
-    "src/app/api/cron/generate-blog/route.ts": { "maxDuration": 300 }
+    "src/app/api/cron/generate-blog/route.ts": { "maxDuration": 300 },
+    "src/app/api/cron/generate-exercise-pages/route.ts": { "maxDuration": 300 },
+    "src/app/api/cron/generate-rehab-guides/route.ts": { "maxDuration": 300 }
   },
   "crons": [
     { "path": "/api/cron/generate-blog", "schedule": "0 5 * * *" },
     { "path": "/api/cron/seo-keywords", "schedule": "30 4 * * 1" },
     { "path": "/api/cron/seo-refresh", "schedule": "45 4 * * 4" },
     { "path": "/api/cron/seo-metrics", "schedule": "6 5 * * *" },
-    { "path": "/api/cron/ai-visibility", "schedule": "20 5 * * 1,4" }
+    { "path": "/api/cron/ai-visibility", "schedule": "20 5 * * 1,4" },
+    { "path": "/api/cron/generate-exercise-pages", "schedule": "12 5 * * 2,5" },
+    { "path": "/api/cron/generate-rehab-guides", "schedule": "18 5 * * 2,5" }
   ]
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Card } from "@/components/ui/card";
@@ -69,23 +70,37 @@ export default function ExerciseLibraryPage() {
           <p className="text-neutral-500">Loading exercises...</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {exercises.map((ex) => (
-              <Card key={ex.id}>
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold text-white">{ex.name}</h3>
-                  <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400">
-                    {ex.difficulty}
-                  </span>
-                </div>
-                <p className="mb-3 text-sm text-neutral-400">{ex.description}</p>
-                <div className="flex gap-2 text-[10px] text-lime-400">
-                  <span className="rounded-full border border-lime-400/30 px-2 py-0.5">{ex.type}</span>
-                  <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-neutral-400">
-                    {ex.region.replace("_", " ")}
-                  </span>
-                </div>
-              </Card>
-            ))}
+            {exercises.map((ex) => {
+              const card = (
+                <Card className={ex.published ? "transition-colors hover:border-lime-400/50" : undefined}>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="font-semibold text-white">{ex.name}</h3>
+                    <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400">
+                      {ex.difficulty}
+                    </span>
+                  </div>
+                  <p className="mb-3 text-sm text-neutral-400">{ex.description}</p>
+                  <div className="flex gap-2 text-[10px] text-lime-400">
+                    <span className="rounded-full border border-lime-400/30 px-2 py-0.5">{ex.type}</span>
+                    <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-neutral-400">
+                      {ex.region.replace("_", " ")}
+                    </span>
+                    {ex.published && (
+                      <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-neutral-400">
+                        Guide →
+                      </span>
+                    )}
+                  </div>
+                </Card>
+              );
+              return ex.published ? (
+                <Link key={ex.id} href={`/exercises/${ex.slug}`} className="block">
+                  {card}
+                </Link>
+              ) : (
+                <div key={ex.id}>{card}</div>
+              );
+            })}
           </div>
         )}
       </div>

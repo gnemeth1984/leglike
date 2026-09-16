@@ -6,6 +6,8 @@ import { Link2, Check, Mail } from "lucide-react";
 interface Props {
   title: string;
   slug: string;
+  /** Defaults to "/blog" — pass "/exercises" or "/rehab-guides" for those page types. */
+  basePath?: string;
 }
 
 function LinkedInIcon() {
@@ -32,9 +34,9 @@ function FacebookIcon() {
   );
 }
 
-export default function ShareButtons({ title, slug }: Props) {
+export default function ShareButtons({ title, slug, basePath = "/blog" }: Props) {
   const [copied, setCopied] = useState(false);
-  const url = `https://leglike.com/blog/${slug}`;
+  const url = `https://leglike.com${basePath}/${slug}`;
 
   async function handleCopy() {
     try {

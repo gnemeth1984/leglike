@@ -137,8 +137,24 @@ model Exercise {
   imageUrl     String?
   createdAt    DateTime     @default(now())
 
+  // SEO page fields — a long-form "how to do X" guide generated once per
+  // exercise on top of the short library-card description/instructions above.
+  // Same fields/shape as BlogPost so the autopilot pattern ports directly.
+  content      String?   @db.Text
+  metaTitle    String?
+  metaDesc     String?
+  keyword      String? // the target query this page was written for
+  faq          String?   @db.Text // JSON array of {q,a}
+  wordCount    Int?
+  coverImage   String?
+  published    Boolean   @default(false) // true once a real SEO page exists — gates indexing, not the library card
+  refreshedAt  DateTime?
+  refreshCount Int       @default(0)
+
   workoutExercises WorkoutExercise[]
   rehabExercises   RehabExercise[]
+
+  @@index([published])
 }
 
 model MobilityAssessment {
@@ -248,6 +264,39 @@ model BlogPost {
 
   @@index([slug])
   @@index([published, createdAt])
+}
+
+// RehabGuide — a public "condition recovery guide" content page (e.g. "ACL
+// tear recovery: symptoms, timeline & exercises"). Distinct from RehabPlan,
+// which is a logged-in user's own AI-generated phased program: RehabGuide is
+// SEO content, seeded from a fixed condition list rather than harvested
+// keywords, and is public/anonymous like BlogPost.
+model RehabGuide {
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  title     String
+  excerpt   String
+  content   String     @db.Text
+  condition String // e.g. "ACL tear" — matches an entry in the fixed condition list
+  region    BodyRegion
+
+  metaTitle  String
+  metaDesc   String
+  coverImage String?
+  published  Boolean  @default(true)
+
+  keyword      String?
+  faq          String?   @db.Text
+  wordCount    Int?
+  refreshedAt  DateTime?
+  refreshCount Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([published, createdAt])
+  @@index([condition])
 }
 
 model SeoKeyword {

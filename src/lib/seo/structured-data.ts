@@ -102,8 +102,10 @@ export function articleSchema(opts: {
   slug: string;
   published: Date;
   updated: Date;
+  /** Defaults to "blog" — pass "exercises" or "rehab-guides" for those page types. */
+  basePath?: string;
 }) {
-  const url = `${SITE_URL}/blog/${opts.slug}`;
+  const url = `${SITE_URL}/${opts.basePath ?? "blog"}/${opts.slug}`;
   return {
     "@context": "https://schema.org",
     "@type": "Article",
