@@ -3,6 +3,12 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  jsonLdProps,
+  organizationSchema,
+  softwareApplicationSchema,
+  websiteSchema,
+} from "@/lib/seo/structured-data";
 
 const features = [
   {
@@ -46,6 +52,13 @@ const steps = [
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-neutral-950">
+      <script
+        {...jsonLdProps([
+          organizationSchema(),
+          websiteSchema(),
+          softwareApplicationSchema(),
+        ])}
+      />
       <Navbar />
 
       {/* Hero */}
